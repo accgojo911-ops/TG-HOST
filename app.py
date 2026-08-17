@@ -6,7 +6,7 @@ import logging
 import datetime
 import threading
 import aiohttp
-from flask import Flask, jsonify
+from flask import Flask
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.error import BadRequest, TimedOut
@@ -68,21 +68,21 @@ EMOJI_CLOCK = p_emoji("5368324170671202286", "⏳")
 EMOJI_NETWORK = p_emoji("5368324170671202286", "🌐")
 
 
-# ------------------ Flask Web Server Integration ------------------
+# ------------------ Flask Web Server Integration (24/7 Keep-Alive) ------------------
 web_app = Flask(__name__)
 
 @web_app.route('/')
 def home():
-    return jsonify({
-        "status": "online",
-        "bot": "JWT Generator Pro Active",
-        "files_loaded": list(stored_json_files.keys())
-    }), 200
+    return "RFG GAMER Bot is Alive and Running 24/7! 🚀"
 
 def run_flask():
-    port = int(os.environ.get("PORT", 5001))
-    web_app.run(host='0.0.0.0', port=port, debug=False, use_reloader=False)
-# ------------------------------------------------------------------
+    port = int(os.environ.get("PORT", 8080))
+    web_app.run(host='0.0.0.0', port=port)
+
+# ব্যাকগ্রাউন্ড থ্রেডে Flask Server চালু রাখা
+flask_thread = threading.Thread(target=run_flask, daemon=True)
+flask_thread.start()
+# -------------------------------------------------------------------------------------
 
 
 # GitHub Push Function
@@ -567,9 +567,6 @@ async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> N
 
 
 def main():
-    # Start Web Server Thread
-    threading.Thread(target=run_flask, daemon=True).start()
-
     app = (
         Application.builder()
         .token(BOT_TOKEN)
