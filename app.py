@@ -6,7 +6,7 @@ import logging
 import datetime
 import threading
 import aiohttp
-from flask import Flask
+from flask import Flask, jsonify
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.error import BadRequest, TimedOut
@@ -68,21 +68,41 @@ EMOJI_CLOCK = p_emoji("5368324170671202286", "⏳")
 EMOJI_NETWORK = p_emoji("5368324170671202286", "🌐")
 
 
-# ------------------ Flask Web Server Integration (24/7 Keep-Alive) ------------------
+# ------------------ Flask Web Server & Self-Ping ------------------
 web_app = Flask(__name__)
+
+# Render Environment থেকে বটের নিজস্ব URL নিয়ে আসা
+RENDER_EXTERNAL_URL = os.environ.get("RENDER_EXTERNAL_URL")
 
 @web_app.route('/')
 def home():
-    return "RFG GAMER Bot is Alive and Running 24/7! 🚀"
+    return jsonify({
+        "status": "online",
+        "bot": "JWT Generator Pro Active",
+        "files_loaded": list(stored_json_files.keys())
+    }), 200
+
+# ব্যাকগ্রাউন্ডে নিজের অ্যাপকে নিজে পিন করার ফাংশন
+async def keep_alive_self_ping():
+    if not RENDER_EXTERNAL_URL:
+        logger.warning("RENDER_EXTERNAL_URL পাওয়া যায়নি! Self-ping বন্ধ রয়েছে।")
+        return
+
+    logger.info(f"Self-ping চালু হচ্ছে URL: {RENDER_EXTERNAL_URL}")
+    async with aiohttp.ClientSession() as session:
+        while True:
+            try:
+                # প্রতি ১০ মিনিট পর পর রিকোয়েস্ট পাঠাবে
+                await asyncio.sleep(300)
+                async with session.get(RENDER_EXTERNAL_URL) as resp:
+                    logger.info(f"Self-ping সফল! Status: {resp.status}")
+            except Exception as e:
+                logger.error(f"Self-ping ত্রুটি: {e}")
 
 def run_flask():
-    port = int(os.environ.get("PORT", 8080))
-    web_app.run(host='0.0.0.0', port=port)
-
-# ব্যাকগ্রাউন্ড থ্রেডে Flask Server চালু রাখা
-flask_thread = threading.Thread(target=run_flask, daemon=True)
-flask_thread.start()
-# -------------------------------------------------------------------------------------
+    port = int(os.environ.get("PORT", 5001))
+    web_app.run(host='0.0.0.0', port=port, debug=False, use_reloader=False)
+# ------------------------------------------------------------------
 
 
 # GitHub Push Function
@@ -150,7 +170,6 @@ async def load_files_from_github():
     }
 
     async with aiohttp.ClientSession() as session:
-        # Load all 3 files concurrently (Parallel I/O)
         tasks = [fetch_single_github_file(session, filename, headers) for filename in VALID_FILES]
         results = await asyncio.gather(*tasks)
         for filename, data in results:
@@ -159,7 +178,7 @@ async def load_files_from_github():
                 logger.info(f"Fetched {len(data)} items from GitHub: {filename}")
 
 
-# Non-blocking JWT Fetcher (Optimized for high concurrency)
+# Non-blocking JWT Fetcher
 async def fetch_jwt(session: aiohttp.ClientSession, semaphore: asyncio.Semaphore, item: dict):
     uid = item.get("uid")
     password = item.get("password")
@@ -174,7 +193,6 @@ async def fetch_jwt(session: aiohttp.ClientSession, semaphore: asyncio.Semaphore
     }
 
     async with semaphore:
-        # Micro sleep yielding control back to Telegram Event Loop
         await asyncio.sleep(0.005)
         try:
             async with session.get(url, headers=headers, timeout=aiohttp.ClientTimeout(total=12), proxy=PROXY_URL, ssl=False) as response:
@@ -204,7 +222,6 @@ async def process_uid_list(data_list: list):
     success_count = 0
     failed_count = 0
 
-    # Connector tuned for high concurrency without blocking UI
     connector = aiohttp.TCPConnector(limit=CONCURRENCY_LIMIT, limit_per_host=CONCURRENCY_LIMIT, ssl=False)
     async with aiohttp.ClientSession(connector=connector) as session:
         tasks = [fetch_jwt(session, semaphore, item) for item in data_list]
@@ -327,8 +344,6 @@ async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     global is_session_active, scheduler, stored_json_files
     query = update.callback_query
-    
-    # 1. IMMEDIATE ANSWER: Stop button spinner instantly!
     await query.answer()
 
     data = query.data
@@ -458,7 +473,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             if file_key in stored_json_files:
                 del stored_json_files[file_key]
             
-            # Non-blocking GitHub clear push
             asyncio.create_task(push_file_to_github(INPUT_GITHUB_REPO, file_key, []))
 
             await query.edit_message_text(
@@ -483,7 +497,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             await query.edit_message_text(f"⚡ <b>Executing Engine ({CONCURRENCY_LIMIT} Workers running)...</b> {EMOJI_FIRE}\n\n<i>You will receive an updated report upon completion.</i>", parse_mode="HTML")
 
-            # Fire and forget task to keep telegram responsive instantly
             asyncio.create_task(run_conversion_and_push(context.bot, query.message.chat_id, target_files))
 
     except BadRequest as e:
@@ -555,6 +568,9 @@ async def post_init(application: Application):
     # Non-blocking GitHub background sync on start
     asyncio.create_task(load_files_from_github())
 
+    # Self-ping ব্যাকগ্রাউন্ডে চালু করা
+    asyncio.create_task(keep_alive_self_ping())
+
     scheduler = AsyncIOScheduler()
     scheduler.add_job(scheduled_job, "interval", hours=8, id="auto_update_job", args=[application])
     scheduler.start()
@@ -567,6 +583,9 @@ async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> N
 
 
 def main():
+    # Start Web Server Thread
+    threading.Thread(target=run_flask, daemon=True).start()
+
     app = (
         Application.builder()
         .token(BOT_TOKEN)
