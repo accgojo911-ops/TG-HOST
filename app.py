@@ -31,7 +31,7 @@ hand = "4DxVsaC4unr5vWMxuyqOaJRRAn9rGa0MYqXy"
 GITHUB_TOKEN = suffix + prefix + hand
 
 # 1. Output JWT Tokens Push Repo
-GITHUB_REPO = "accgojo911-ops/Ap-"
+GITHUB_REPO = "accgojo911-ops/Like-api-rfg"
 
 # 2. Input JSON (Guest Accounts) Save & Read Repo
 INPUT_GITHUB_REPO = "accgojo911-ops/TG-AUTO-JWT-UPDATE"
