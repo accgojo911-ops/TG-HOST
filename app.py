@@ -71,7 +71,7 @@ EMOJI_NETWORK = p_emoji("5368324170671202286", "🌐")
 # ------------------ Flask Web Server & Self-Ping ------------------
 web_app = Flask(__name__)
 
-# Render Environment থেকে বটের নিজস্ব URL নিয়ে আসা
+# Render Environment থেকে বটের নিজস্ব URL নিয়ে আসা
 RENDER_EXTERNAL_URL = os.environ.get("RENDER_EXTERNAL_URL")
 
 @web_app.route('/')
@@ -85,14 +85,14 @@ def home():
 # ব্যাকগ্রাউন্ডে নিজের অ্যাপকে নিজে পিন করার ফাংশন
 async def keep_alive_self_ping():
     if not RENDER_EXTERNAL_URL:
-        logger.warning("RENDER_EXTERNAL_URL পাওয়া যায়নি! Self-ping বন্ধ রয়েছে।")
+        logger.warning("RENDER_EXTERNAL_URL পাওয়া যায়নি! Self-ping বন্ধ রয়েছে।")
         return
 
     logger.info(f"Self-ping চালু হচ্ছে URL: {RENDER_EXTERNAL_URL}")
     async with aiohttp.ClientSession() as session:
         while True:
             try:
-                # প্রতি ১০ মিনিট পর পর রিকোয়েস্ট পাঠাবে
+                # প্রতি ১০ মিনিট পর পর রিকোয়েস্ট পাঠাবে
                 await asyncio.sleep(300)
                 async with session.get(RENDER_EXTERNAL_URL) as resp:
                     logger.info(f"Self-ping সফল! Status: {resp.status}")
@@ -229,12 +229,13 @@ async def process_uid_list(data_list: list):
 
         for success, token in results:
             if success and token:
-                tokens.append(token)
+                # আপনার চাওয়া ফরম্যাট অনুযায়ী প্রতিটি টোকেনকে {"token": token} অবজেক্ট আকারে যোগ করা হচ্ছে
+                tokens.append({"token": token})
                 success_count += 1
             else:
                 failed_count += 1
 
-    return {"tokens": tokens}, success_count, failed_count
+    return tokens, success_count, failed_count
 
 
 # Keyboard Generator
