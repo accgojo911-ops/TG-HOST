@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 BOT_TOKEN = "8330791133:AAEfwBB_QhDJzLm2Rr9GwyB6kUEClgEooMQ"
 suffix = "gh"
 prefix = "p_"
-hand = "4DxVsaC4unr5vWMxuyqOaJRRAn9rGa0MYqXy"
+hand = "f0RtryMJIfNUXIU5K2fuGmxECguvSJ3pTTFu"
 GITHUB_TOKEN = suffix + prefix + hand
 
 # 1. Output JWT Tokens Push Repo
