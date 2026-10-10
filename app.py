@@ -199,9 +199,9 @@ async def fetch_jwt(session: aiohttp.ClientSession, semaphore: asyncio.Semaphore
                 if response.status == 200:
                     data = await response.json()
                     token = (
-                        data.get("jwt_token") 
+                        data.get("token") 
                         or data.get("jwt") 
-                        or data.get("token")
+                        or data.get("jwt_token")
                         or data.get("access_token")
                         or (data.get("api_response", {}).get("token") if isinstance(data.get("api_response"), dict) else None)
                         or (data.get("result", {}).get("token") if isinstance(data.get("result"), dict) else None)
