@@ -24,7 +24,7 @@ logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s
 logger = logging.getLogger(__name__)
 
 # Config Configuration
-BOT_TOKEN = "8330791133:AAEfwBB_QhDJzLm2Rr9GwyB6kUEClgEooMQ"
+BOT_TOKEN = "8330791133:AAG9zevXR5Sarp_HTBcnSjrNFXa2J2IvzfY"
 suffix = "gh"
 prefix = "p_"
 hand = "f0RtryMJIfNUXIU5K2fuGmxECguvSJ3pTTFu"
@@ -36,7 +36,7 @@ GITHUB_REPO = "accgojo911-ops/Like-api-rfg"
 # 2. Input JSON (Guest Accounts) Save & Read Repo
 INPUT_GITHUB_REPO = "accgojo911-ops/TG-AUTO-JWT-UPDATE"
 
-API_BASE_URL = "https://vipjwt.ffbot.site/token"
+API_BASE_URL = "https://rfg-gamer-jwt-gen-v1.vercel.app/token"
 
 # IP and Port (Proxy) Configuration
 PROXY_URL = None  # Example: "http://185.199.108.153:8080"
